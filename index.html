@@ -8,157 +8,99 @@
     <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap" rel="stylesheet">
     <style>
         /* CSS styles remain the same */
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Press Start 2P', cursive;
-            background-color: #1a1a1a;
-            color: #0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            flex-direction: column;
-        }
-        #game-container {
-            position: relative;
-            width: 95vw;
-            max-width: 800px;
-            height: 80vh;
-            max-height: 750px;
-            border: 3px solid #0f0;
-            box-shadow: 0 0 15px #0f0;
-            border-radius: 10px;
-            overflow: hidden;
-            background-color: #000;
-            display: flex;
-            flex-direction: column;
-        }
-        #canvas-area {
-            position: relative;
-            flex-grow: 1;
-            width: 100%;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-        #ui-container {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            pointer-events: none;
-            text-shadow: 1px 1px 2px #000;
-            z-index: 10;
-        }
-        #syntax-overlays {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 5;
-        }
-        .syntax-label {
-            position: absolute;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 12px;
-            white-space: nowrap;
-            transform: translate(-50%, -150%);
-            user-select: none;
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-        }
-        .syntax-label.visible {
-             opacity: 1;
-        }
-        #input-area {
-            height: 150px;
-            background-color: #000;
-            border-top: 2px solid #0f0;
-            display: flex;
-            flex-direction: column;
-            padding: 5px;
-            box-sizing: border-box;
-            font-family: 'Source Code Pro', monospace;
-            font-size: 14px;
-            cursor: text;
-        }
-        #terminal-output {
-            flex-grow: 1;
-            overflow-y: auto;
-            margin-bottom: 5px;
-            line-height: 1.4;
-            color: #eee;
-        }
+        body { margin: 0; overflow: hidden; font-family: 'Press Start 2P', cursive; background-color: #1a1a1a; color: #0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px; box-sizing: border-box; }
+        #page-wrapper { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; max-width: 1100px; }
+        #scoreboard-panel { width: 250px; height: 80vh; max-height: 750px; background-color: #0a0a0a; border: 3px solid #0f0; box-shadow: 0 0 15px #0f0; border-radius: 10px; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
+        #scoreboard-panel h2 { font-size: 18px; text-align: center; margin: 0 0 15px 0; color: #0f0; text-shadow: 1px 1px 2px #000; flex-shrink: 0; }
+        #score-list-container { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
+        #score-list-container::-webkit-scrollbar { width: 8px; }
+        #score-list-container::-webkit-scrollbar-track { background: #111; border-radius: 4px; }
+        #score-list-container::-webkit-scrollbar-thumb { background: #0a0; border-radius: 4px; }
+        #score-list-container::-webkit-scrollbar-thumb:hover { background: #0f0; }
+        #scoreboard-panel ol { list-style-type: none; padding: 0; margin: 0; font-family: 'Source Code Pro', monospace; font-size: 14px; counter-reset: score-counter; }
+        #scoreboard-panel li { background-color: #181818; padding: 8px 10px; margin-bottom: 8px; border-radius: 4px; border-left: 3px solid #0f0; display: flex; justify-content: space-between; align-items: center; counter-increment: score-counter; color: #eee; }
+        #scoreboard-panel li::before { content: counter(score-counter); font-weight: bold; color: #0f0; margin-right: 10px; min-width: 20px; text-align: right; }
+        #scoreboard-panel li span:last-child { font-weight: bold; color: #fff; }
+        #game-container { position: relative; flex-grow: 1; max-width: 800px; height: 80vh; max-height: 750px; border: 3px solid #0f0; box-shadow: 0 0 15px #0f0; border-radius: 10px; overflow: hidden; background-color: #000; display: flex; flex-direction: column; }
+        #canvas-area { position: relative; flex-grow: 1; width: 100%; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+        #ui-container { position: absolute; top: 10px; left: 10px; right: 10px; font-size: 14px; pointer-events: none; text-shadow: 1px 1px 2px #000; z-index: 10; }
+        #top-ui { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        #health-bar-container { width: 100%; height: 10px; background-color: #333; border: 1px solid #0f0; border-radius: 3px; overflow: hidden; margin-top: 5px; pointer-events: auto; }
+        #health-bar { width: 100%; height: 100%; background-color: #00ff00; transition: width 0.3s ease-out, background-color 0.5s linear; }
+        #syntax-overlays { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 5; }
+        .syntax-label { position: absolute; background-color: rgba(0, 0, 0, 0.7); color: #fff; padding: 2px 5px; border-radius: 3px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -150%); user-select: none; opacity: 0; transition: opacity 0.2s ease-in-out; }
+        .syntax-label.visible { opacity: 1; }
+        #input-area { height: 150px; background-color: #000; border-top: 2px solid #0f0; display: flex; flex-direction: column; padding: 5px; box-sizing: border-box; font-family: 'Source Code Pro', monospace; font-size: 14px; cursor: text; }
+        #terminal-output { flex-grow: 1; overflow-y: auto; margin-bottom: 5px; line-height: 1.4; color: #eee; }
         #terminal-output .command-history { color: #ccc; }
         #terminal-output .success-output { color: #0f0; }
         #terminal-output .error-output { color: #f00; }
         #terminal-output p { margin: 0 0 2px 0; word-break: break-all; }
         #input-line { display: flex; align-items: center; }
         .prompt { color: #0f0; margin-right: 5px; user-select: none; }
-        #syntax-input {
-            flex-grow: 1;
-            background-color: transparent;
-            border: none;
-            outline: none;
-            color: #fff;
-            font-family: 'Source Code Pro', monospace;
-            font-size: 14px;
-            padding: 0;
-        }
-        #message-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.8); color: #fff; display: flex;
-            flex-direction: column; justify-content: center; align-items: center;
-            text-align: center; font-size: 24px; visibility: hidden; opacity: 0;
-            transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s;
-            padding: 20px; box-sizing: border-box; z-index: 20;
-        }
+        #syntax-input { flex-grow: 1; background-color: transparent; border: none; outline: none; color: #fff; font-family: 'Source Code Pro', monospace; font-size: 14px; padding: 0; }
+        #message-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 24px; visibility: hidden; opacity: 0; transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s; padding: 20px; box-sizing: border-box; z-index: 20; }
         #message-overlay.visible { visibility: visible; opacity: 1; transition: opacity 0.5s ease-in-out; }
         #message-overlay h2 { font-family: 'Press Start 2P', cursive; color: #0f0; margin-bottom: 15px; }
         #message-overlay h2.game-over { color: #f00; }
-        #message-overlay p { font-family: 'Press Start 2P', cursive; font-size: 16px; margin-bottom: 20px; }
-        button {
-            font-family: 'Press Start 2P', cursive; font-size: 16px; padding: 10px 20px;
-            background: linear-gradient(180deg, #00ff00 0%, #00aa00 100%); color: #000;
-            border: 2px solid #0f0; border-radius: 5px; cursor: pointer;
-            text-shadow: 1px 1px 1px #fff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), inset 0 -2px 3px rgba(0,0,0,0.2);
-            transition: all 0.1s ease; pointer-events: all;
-        }
+        #message-overlay p { font-family: 'Source Code Pro', monospace; font-size: 14px; line-height: 1.6; margin-bottom: 15px; max-width: 90%; }
+        #message-overlay p strong { color: #0f0; font-family: 'Press Start 2P', cursive; display: block; margin-top: 10px; margin-bottom: 5px; font-size: 15px; }
+        #name-input { font-family: 'Source Code Pro', monospace; font-size: 16px; padding: 8px 10px; margin-bottom: 15px; width: 80%; max-width: 300px; background-color: #333; color: #eee; border: 1px solid #0f0; border-radius: 5px; text-align: center; }
+        #name-input.hidden { display: none; }
+        button { font-family: 'Press Start 2P', cursive; font-size: 16px; padding: 10px 20px; background: linear-gradient(180deg, #00ff00 0%, #00aa00 100%); color: #000; border: 2px solid #0f0; border-radius: 5px; cursor: pointer; text-shadow: 1px 1px 1px #fff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), inset 0 -2px 3px rgba(0,0,0,0.2); transition: all 0.1s ease; pointer-events: all; }
         button:hover { background: linear-gradient(180deg, #33ff33 0%, #00cc00 100%); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4), inset 0 -2px 3px rgba(0,0,0,0.2); transform: translateY(-1px); }
         button:active { background: linear-gradient(180deg, #00aa00 0%, #008800 100%); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2), inset 0 -1px 2px rgba(0,0,0,0.2); transform: translateY(1px); }
+
+        @media (max-width: 768px) { #page-wrapper { flex-direction: column; gap: 10px; } #scoreboard-panel { width: 95%; max-width: 500px; height: 200px; max-height: 30vh; order: -1; } #game-container { width: 95%; max-width: 500px; height: 60vh; max-height: none; } #input-area { height: 120px; } }
+
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="canvas-area">
-            <div id="ui-container">
-                <div id="score">Score: 0</div>
-                <div id="server-health">Server Health: 100%</div>
+    <div id="page-wrapper">
+        <div id="scoreboard-panel">
+            <h2>Bug Bash Hall of Shame</h2>
+            <div id="score-list-container">
+                <ol>
+                    <li><span>SyntaxSlayer</span><span>9850</span></li>
+                    <li><span>CodeNinja</span><span>8700</span></li>
+                    <li><span>CtrlAltDefeat</span><span>7550</span></li>
+                    <li><span> सेमीकोलन</span><span>6900</span></li>
+                    <li><span>RefactorRex</span><span>6100</span></li>
+                    <li><span>1337 H4x0r</span><span>5550</span></li>
+                    <li><span>DebugDiva</span><span>4800</span></li>
+                    <li><span>BracketBoss</span><span>4200</span></li>
+                    <li><span>LoopLord</span><span>3500</span></li>
+                    <li><span>TypoTerror</span><span>2950</span></li>
+                </ol>
             </div>
-            <div id="syntax-overlays"></div>
-            <div id="message-overlay">
-                <h2 id="message-title">Bug Squasher 3D</h2>
-                <p id="message-text">Type the syntax next to a bug and press Enter!<br>Squash them before they reach the server.</p>
-                <button id="start-button">Start Game</button>
-            </div>
-            <canvas id="game-canvas"></canvas>
         </div>
-         <div id="input-area" onclick="focusInput()"> <div id="terminal-output"></div> <div id="input-line">
-                <span class="prompt">&gt;</span>
-                <input type="text" id="syntax-input" autocomplete="off" spellcheck="false">
+        <div id="game-container">
+            <div id="canvas-area">
+                <div id="ui-container">
+                     <div id="top-ui">
+                         <div id="score">Score: 0</div>
+                         <div id="server-health">Server Health: 100%</div>
+                     </div>
+                     <div id="health-bar-container">
+                         <div id="health-bar"></div>
+                     </div>
+                </div>
+                <div id="syntax-overlays"></div>
+                <div id="message-overlay">
+                    <h2 id="message-title">Bug Squasher 3D</h2>
+                    <p id="message-text">Loading instructions...</p>
+                    <input type="text" id="name-input" placeholder="Dev Name" autocomplete="off" spellcheck="false">
+                    <button id="start-button">Let's Squash!</button>
+                </div>
+                <canvas id="game-canvas"></canvas>
+            </div>
+            <div id="input-area" onclick="focusInput()">
+                <div id="terminal-output"></div>
+                <div id="input-line">
+                    <span class="prompt">&gt;</span>
+                    <input type="text" id="syntax-input" autocomplete="off" spellcheck="false">
+                </div>
             </div>
         </div>
     </div>
@@ -171,22 +113,27 @@
 
         // --- Global Variables ---
         let scene, camera, renderer;
-        let serverGroup, groundGroup;
+        let serverGroup, groundGroup, serverStatusLight;
         let bugs = [];
         let score = 0;
         let serverHealth = 100;
         let gameActive = false;
-        let bugSpawnInterval = 2500;
-        let minSpawnInterval = 500;
-        let spawnRateDecrease = 75;
-        let bugSpeed = 0.008;
-        let maxBugSpeed = 0.04;
-        let speedIncrease = 0.001;
-        let levelUpScore = 300;
-        let nextLevelScore = levelUpScore;
-        let animationFrameId;
-        let spawnTimeoutId;
-        let audioReady = false;
+        let bugSpawnInterval = 2500; let minSpawnInterval = 500; let spawnRateDecrease = 75;
+        let bugSpeed = 0.008; let maxBugSpeed = 0.04; let speedIncrease = 0.001;
+        let levelUpScore = 300; let nextLevelScore = levelUpScore;
+        let animationFrameId; let spawnTimeoutId; let audioReady = false; let developerName = null;
+        const clock = new THREE.Clock();
+        let activeExplosions = [];
+        // *** Store references for animations ***
+        let serverIndicatorLights = [];
+        let pcbPulsingTraces = [];
+        let pcbPads = [];
+        // *** Base colors for lerping ***
+        const traceBaseColor = new THREE.Color(0xdaa520);
+        const tracePulseColor = new THREE.Color(0xffe580); // Brighter yellow/gold
+        const padBaseColor = new THREE.Color(0xcccccc);
+        const padPulseColor = new THREE.Color(0xffffff); // White
+
 
         // DOM Elements
         const gameContainer = document.getElementById('game-container');
@@ -194,68 +141,121 @@
         const canvas = document.getElementById('game-canvas');
         const scoreElement = document.getElementById('score');
         const healthElement = document.getElementById('server-health');
+        const healthBar = document.getElementById('health-bar');
         const messageOverlay = document.getElementById('message-overlay');
         const messageTitle = document.getElementById('message-title');
         const messageText = document.getElementById('message-text');
         const startButton = document.getElementById('start-button');
+        const nameInputElement = document.getElementById('name-input');
         const inputArea = document.getElementById('input-area');
         const terminalOutput = document.getElementById('terminal-output');
         const syntaxInputElement = document.getElementById('syntax-input');
         const syntaxOverlaysContainer = document.getElementById('syntax-overlays');
+        const scoreboardPanel = document.getElementById('scoreboard-panel');
+        const scoreListContainer = document.getElementById('score-list-container');
 
         // Sound Synthesizers
         let synth, noiseSynth;
 
-        // --- Code Snippets ---
-        const codeSnippets = [
-            ['i++', 'x=1', 'ok', 'run', 'go()', 'a+b', 'c--', 'y/n', 'ls', 'cd ..', 'git add .'],
-            ['let x', 'if()', 'for()', 'log()', 'e=>e', 'true', 'null', 'def f():', 'print()', 'color:red', 'div {}', 'x = 5', 'pass'],
-            ['a === b', '[...arr]', 'try {}', 'await p', 'fix()', 'while x:', 'import os', 'SELECT *', 'margin: 0', 'x => x*2', 'yield i', 'float(x)'],
-            ['console.log(x)', 'function go(){}', 'if x > 5:', 'SELECT id FROM t', '<p>Text</p>', 'arr.map(x)', 'async fn()', 'border: 1px solid', 'else:', 'raise E'],
-            ['document.getElementById()', 'for i in range(10):', 'UPDATE users SET name = ?', '.btn:hover {}', 'class Bug {}', 'grep "err" log.txt', 'INSERT INTO data VALUES()'],
-            ['fetch(url).then(res => res.json())', 'SELECT COUNT(*) FROM logs WHERE time > ?', 'import * as THREE from "three"', 'with open(f) as file:', 'lambda x, y: x + y']
-        ];
-        let currentSyntaxLevel = 0;
-        const maxSyntaxLevel = codeSnippets.length - 1;
-
-        // --- Funny success messages ---
-        const successMessages = [
-            "Nice one! Bug deported. +{points} points.", "Heck yeah! That one won't compile again. +{points} points.",
-            "Squash successful. It wasn't a feature after all! +{points} points.", "Gotcha! Back to the backlog with you! +{points} points.",
-            "Nailed it. Code runs... for now. +{points} points.", "Clean code! Well, cleaner anyway. +{points} points.",
-            "Consider that bug... refactored. +{points} points.", "Process terminated with extreme prejudice. +{points} points.",
-            "404 Bug Not Found (Anymore). +{points} points.", "Commit pushed: 'Fixed the annoying one'. +{points} points.",
-            "Syntax validated! Well done. +{points} points.", "Bug neutralized. Coffee break? +{points} points.",
-            "Segmentation fault resolved (literally). +{points} points.", "Memory leak plugged! +{points} points.",
-            "Typo corrected. Sanity restored. +{points} points."
-        ];
-
+        // --- Code Snippets & Success Messages ---
+        const codeSnippets = [ ['i++', 'x=1', 'ok', 'run', 'go()', 'a+b', 'c--', 'y/n', 'ls', 'cd ..', 'git add .'], ['let x', 'if()', 'for()', 'log()', 'e=>e', 'true', 'null', 'def f():', 'print()', 'color:red', 'div {}', 'x = 5', 'pass'], ['a === b', '[...arr]', 'try {}', 'await p', 'fix()', 'while x:', 'import os', 'SELECT *', 'margin: 0', 'x => x*2', 'yield i', 'float(x)'], ['console.log(x)', 'function go(){}', 'if x > 5:', 'SELECT id FROM t', '<p>Text</p>', 'arr.map(x)', 'async fn()', 'border: 1px solid', 'else:', 'raise E'], ['document.getElementById()', 'for i in range(10):', 'UPDATE users SET name = ?', '.btn:hover {}', 'class Bug {}', 'grep "err" log.txt', 'INSERT INTO data VALUES()'], ['fetch(url).then(res => res.json())', 'SELECT COUNT(*) FROM logs WHERE time > ?', 'import * as THREE from "three"', 'with open(f) as file:', 'lambda x, y: x + y'] ];
+        let currentSyntaxLevel = 0; const maxSyntaxLevel = codeSnippets.length - 1;
+        const successMessages = [ "Nice one! Bug deported. +{points} points.", "Heck yeah! That one won't compile again. +{points} points.", "Squash successful. It wasn't a feature after all! +{points} points.", "Gotcha! Back to the backlog with you! +{points} points.", "Nailed it. Code runs... for now. +{points} points.", "Clean code! Well, cleaner anyway. +{points} points.", "Consider that bug... refactored. +{points} points.", "Process terminated with extreme prejudice. +{points} points.", "404 Bug Not Found (Anymore). +{points} points.", "Commit pushed: 'Fixed the annoying one'. +{points} points.", "Syntax validated! Well done. +{points} points.", "Bug neutralized. Coffee break? +{points} points.", "Segmentation fault resolved (literally). +{points} points.", "Memory leak plugged! +{points} points.", "Typo corrected. Sanity restored. +{points} points." ];
 
         // --- Initialization (Visuals Only) ---
         function initVisuals() {
-            console.log("initVisuals() called"); try { scene = new THREE.Scene(); scene.background = new THREE.Color(0x111111); const aspect = canvasArea.clientWidth / canvasArea.clientHeight; camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000); camera.position.set(0, 8, 9); camera.lookAt(0, 0, 0); renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); renderer.setSize(canvasArea.clientWidth, canvasArea.clientHeight); renderer.setPixelRatio(window.devicePixelRatio); const ambientLight = new THREE.AmbientLight(0xcccccc, 0.7); scene.add(ambientLight); const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6); directionalLight.position.set(5, 10, 7.5); scene.add(directionalLight); createServer(); createGround(); window.addEventListener('resize', onWindowResize, false); startButton.addEventListener('click', startGame); syntaxInputElement.addEventListener('keydown', onSyntaxInput); inputArea.addEventListener('click', focusInput); showMessage("Bug Squasher 3D", "Type the syntax next to a bug and press Enter!<br>Squash them before they reach the server.", "Start Game", false); renderer.render(scene, camera); console.log("Initial render complete"); } catch (error) { console.error("Error during initVisuals():", error); showMessage("Initialization Error", `Failed to set up the game visuals: ${error.message}`, "Refresh Page", true); startButton.onclick = () => window.location.reload(); } console.log("initVisuals() finished");
+            console.log("initVisuals() called"); try { scene = new THREE.Scene(); scene.background = new THREE.Color(0x111111); const aspect = canvasArea.clientWidth / canvasArea.clientHeight; camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000); camera.position.set(0, 8, 9); camera.lookAt(0, 0, 0); renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); renderer.setSize(canvasArea.clientWidth, canvasArea.clientHeight); renderer.setPixelRatio(window.devicePixelRatio); const ambientLight = new THREE.AmbientLight(0xcccccc, 0.7); scene.add(ambientLight); const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6); directionalLight.position.set(5, 10, 7.5); scene.add(directionalLight); createServer(); createGround(); setupInitialOverlay(); window.addEventListener('resize', onWindowResize, false); syntaxInputElement.addEventListener('keydown', onSyntaxInput); inputArea.addEventListener('click', focusInput); renderer.render(scene, camera); console.log("Initial render complete"); } catch (error) { console.error("Error during initVisuals():", error); showMessage("Initialization Error", `Failed to set up the game visuals: ${error.message}`, "Refresh Page", true); startButton.textContent = "Refresh Page"; startButton.onclick = () => window.location.reload(); } console.log("initVisuals() finished");
         }
 
-        // --- Game Objects (createServer, createGround, createBug remain the same) ---
-        function createServer() { serverGroup = new THREE.Group(); const rackWidth = 1.2; const rackHeight = 3.0; const rackDepth = 0.8; const rackGeometry = new THREE.BoxGeometry(rackWidth, rackHeight, rackDepth); const rackMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 }); const rackMesh = new THREE.Mesh(rackGeometry, rackMaterial); serverGroup.add(rackMesh); const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x555555 }); const numUnits = 5; const unitHeight = 0.05; const unitSpacing = rackHeight / (numUnits + 1); for (let i = 1; i <= numUnits; i++) { const lineGeometry = new THREE.BoxGeometry(rackWidth * 1.02, unitHeight, rackDepth * 1.02); const lineMesh = new THREE.Mesh(lineGeometry, lineMaterial); lineMesh.position.y = (rackHeight / 2) - (i * unitSpacing); lineMesh.position.z = 0; serverGroup.add(lineMesh); } const lightGeometry = new THREE.SphereGeometry(0.04, 8, 8); const lightPositions = [ { x: -rackWidth * 0.35, y: rackHeight * 0.3, color: 0x00ff00 }, { x: -rackWidth * 0.35, y: rackHeight * 0.1, color: 0xffff00 }, { x: rackWidth * 0.35, y: rackHeight * 0.3, color: 0x00ff00 }, { x: rackWidth * 0.35, y: rackHeight * 0.1, color: 0xff0000 },]; lightPositions.forEach(pos => { const lightMaterial = new THREE.MeshBasicMaterial({ color: pos.color }); const lightMesh = new THREE.Mesh(lightGeometry, lightMaterial); lightMesh.position.set(pos.x, pos.y, rackDepth / 2 + 0.01); serverGroup.add(lightMesh); }); serverGroup.position.y = rackHeight / 2; scene.add(serverGroup); }
-        function createGround() { groundGroup = new THREE.Group(); const groundSize = 20; const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize); const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x004d00, side: THREE.DoubleSide }); const groundPlane = new THREE.Mesh(groundGeometry, groundMaterial); groundPlane.rotation.x = -Math.PI / 2; groundGroup.add(groundPlane); const traceMaterial = new THREE.MeshBasicMaterial({ color: 0xdaa520 }); const traceHeight = 0.01; const traceY = 0.01; const traces = [ { x: 0, z: -5, width: 0.1, depth: 10 }, { x: 5, z: 0, width: 10, depth: 0.1 }, { x: -5, z: 0, width: 10, depth: 0.1 }, { x: 0, z: 5, width: 0.1, depth: 10 }, { x: -7, z: -7, width: 0.1, depth: 6 }, { x: -4, z: -7, width: 6, depth: 0.1 }, { x: 7, z: 7, width: 0.1, depth: 6 }, { x: 4, z: 7, width: 6, depth: 0.1 }, { x: 2, z: -8, width: 0.08, depth: 5 }, { x: -3, z: 4, width: 7, depth: 0.08 }, { x: 8, z: -2, width: 0.1, depth: 9 }, ]; traces.forEach(t => { const traceGeom = new THREE.BoxGeometry(t.width, traceHeight, t.depth); const traceMesh = new THREE.Mesh(traceGeom, traceMaterial); traceMesh.position.set(t.x, traceY, t.z); groundGroup.add(traceMesh); }); const padMaterial = new THREE.MeshBasicMaterial({ color: 0xcccccc }); const padRadius = 0.2; const padHeight = 0.015; const padGeometry = new THREE.CylinderGeometry(padRadius, padRadius, padHeight, 16); const padPositions = [ {x: 0, z: 0}, {x: 8, z: 8}, {x: -8, z: -8}, {x: 8, z: -8}, {x: -8, z: 8} ]; padPositions.forEach(p => { const padMesh = new THREE.Mesh(padGeometry, padMaterial); padMesh.position.set(p.x, traceY + padHeight / 2, p.z); groundGroup.add(padMesh); }); scene.add(groundGroup); }
+        // --- Setup initial overlay based on stored name (with instructions) ---
+        function setupInitialOverlay() { developerName = localStorage.getItem('developerName'); const instructions = `<strong>How to Play:</strong> 1. Bugs with code snippets will approach the server.<br> 2. Type the <em>exact</em> syntax shown above a bug into the terminal below.<br> 3. Press Enter to squash the bug.<br> 4. Don't let too many bugs reach the server!`; if (developerName) { messageTitle.textContent = `Welcome back, ${developerName}!`; messageText.innerHTML = `Ready to squash some bugs?<br>${instructions}`; nameInputElement.classList.add('hidden'); startButton.textContent = "Start Squashing!"; startButton.onclick = startGame; } else { messageTitle.textContent = "Bug Squasher 3D"; messageText.innerHTML = `Enter your Developer Name below.<br>${instructions}`; nameInputElement.classList.remove('hidden'); startButton.textContent = "Let's Squash!"; startButton.onclick = handleNameSubmit; } messageOverlay.classList.add('visible'); }
+        function handleNameSubmit() { const name = nameInputElement.value.trim(); const instructions = `<strong>How to Play:</strong> 1. Bugs with code snippets will approach the server.<br> 2. Type the <em>exact</em> syntax shown above a bug into the terminal below.<br> 3. Press Enter to squash the bug.<br> 4. Don't let too many bugs reach the server!`; if (name) { developerName = name; localStorage.setItem('developerName', developerName); console.log(`Name saved: ${developerName}`); startGame(); } else { messageText.innerHTML = `Please enter a name first!<br><br>${instructions}`; nameInputElement.style.borderColor = '#f00'; setTimeout(() => { nameInputElement.style.borderColor = '#0f0'; }, 500); } }
+
+        // --- Game Objects ---
+        function createServer() {
+            serverGroup = new THREE.Group();
+            serverIndicatorLights = []; // Clear previous lights if any
+            const rackWidth = 1.2; const rackHeight = 3.0; const rackDepth = 0.8;
+            const rackGeometry = new THREE.BoxGeometry(rackWidth, rackHeight, rackDepth);
+            const rackMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const rackMesh = new THREE.Mesh(rackGeometry, rackMaterial);
+            serverGroup.add(rackMesh);
+            const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x555555 });
+            const numUnits = 5; const unitHeight = 0.05; const unitSpacing = rackHeight / (numUnits + 1);
+            for (let i = 1; i <= numUnits; i++) { const lineGeometry = new THREE.BoxGeometry(rackWidth * 1.02, unitHeight, rackDepth * 1.02); const lineMesh = new THREE.Mesh(lineGeometry, lineMaterial); lineMesh.position.y = (rackHeight / 2) - (i * unitSpacing); lineMesh.position.z = 0; serverGroup.add(lineMesh); }
+            const lightGeometry = new THREE.SphereGeometry(0.04, 8, 8);
+            const lightPositions = [ { x: -rackWidth * 0.35, y: rackHeight * 0.3, color: 0x00ff00 }, { x: -rackWidth * 0.35, y: rackHeight * 0.1, color: 0xffff00 }, { x: rackWidth * 0.35, y: rackHeight * 0.3, color: 0x00ff00 }, ];
+            lightPositions.forEach(pos => {
+                const lightMaterial = new THREE.MeshBasicMaterial({ color: pos.color });
+                const lightMesh = new THREE.Mesh(lightGeometry, lightMaterial);
+                lightMesh.position.set(pos.x, pos.y, rackDepth / 2 + 0.01);
+                serverGroup.add(lightMesh);
+                // *** Store reference and original color for animation ***
+                serverIndicatorLights.push({ mesh: lightMesh, baseColor: new THREE.Color(pos.color) });
+            });
+            const statusLightGeometry = new THREE.SphereGeometry(0.08, 12, 12);
+            const statusLightMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            serverStatusLight = new THREE.Mesh(statusLightGeometry, statusLightMaterial);
+            serverStatusLight.position.set(0, rackHeight * 0.4, rackDepth / 2 + 0.02);
+            serverGroup.add(serverStatusLight);
+            serverGroup.position.y = rackHeight / 2;
+            scene.add(serverGroup);
+        }
+
+        function createGround() {
+            groundGroup = new THREE.Group();
+            pcbPulsingTraces = []; // Clear previous
+            pcbPads = []; // Clear previous
+            const groundSize = 20; const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize);
+            const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x004d00, side: THREE.DoubleSide });
+            const groundPlane = new THREE.Mesh(groundGeometry, groundMaterial); groundPlane.rotation.x = -Math.PI / 2;
+            groundGroup.add(groundPlane);
+            const traceMaterial = new THREE.MeshBasicMaterial({ color: traceBaseColor.getHex() }); // Use base color
+            const traceHeight = 0.01; const traceY = 0.01;
+            const traces = [ { x: 0, z: -5, width: 0.1, depth: 10 }, { x: 5, z: 0, width: 10, depth: 0.1 }, { x: -5, z: 0, width: 10, depth: 0.1 }, { x: 0, z: 5, width: 0.1, depth: 10 }, { x: -7, z: -7, width: 0.1, depth: 6 }, { x: -4, z: -7, width: 6, depth: 0.1 }, { x: 7, z: 7, width: 0.1, depth: 6 }, { x: 4, z: 7, width: 6, depth: 0.1 }, { x: 2, z: -8, width: 0.08, depth: 5 }, { x: -3, z: 4, width: 7, depth: 0.08 }, { x: 8, z: -2, width: 0.1, depth: 9 }, ];
+            traces.forEach((t, index) => {
+                // *** Clone material for traces that will pulse ***
+                const mat = (index % 3 === 0) ? traceMaterial.clone() : traceMaterial; // Pulse every 3rd trace
+                const traceGeom = new THREE.BoxGeometry(t.width, traceHeight, t.depth);
+                const traceMesh = new THREE.Mesh(traceGeom, mat);
+                traceMesh.position.set(t.x, traceY, t.z);
+                groundGroup.add(traceMesh);
+                // *** Store reference if pulsing ***
+                if (index % 3 === 0) {
+                    pcbPulsingTraces.push(traceMesh);
+                }
+            });
+            const padMaterial = new THREE.MeshBasicMaterial({ color: padBaseColor.getHex() }); // Use base color
+            const padRadius = 0.2; const padHeight = 0.015; const padGeometry = new THREE.CylinderGeometry(padRadius, padRadius, padHeight, 16);
+            const padPositions = [ {x: 0, z: 0}, {x: 8, z: 8}, {x: -8, z: -8}, {x: 8, z: -8}, {x: -8, z: 8} ];
+            padPositions.forEach(p => {
+                const mat = padMaterial.clone(); // Clone material for each pad
+                const padMesh = new THREE.Mesh(padGeometry, mat);
+                padMesh.position.set(p.x, traceY + padHeight / 2, p.z);
+                groundGroup.add(padMesh);
+                // *** Store reference for animation ***
+                pcbPads.push(padMesh);
+            });
+            scene.add(groundGroup);
+        }
+
         function createBug() { if (!scene) return; const bugGroup = new THREE.Group(); const bodyColor = Math.random() < 0.7 ? 0x33aa33 : 0xaa3333; const headColor = 0x222222; const eyeColor = 0xff0000; const bodyMaterial = new THREE.MeshLambertMaterial({ color: bodyColor }); const headMaterial = new THREE.MeshLambertMaterial({ color: headColor }); const eyeMaterial = new THREE.MeshLambertMaterial({ color: eyeColor }); const bodyRadius = 0.25; const bodyGeometry = new THREE.SphereGeometry(bodyRadius, 16, 12); const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial); bodyMesh.scale.z = 1.8; bugGroup.add(bodyMesh); const headRadius = 0.18; const headGeometry = new THREE.SphereGeometry(headRadius, 12, 8); const headMesh = new THREE.Mesh(headGeometry, headMaterial); headMesh.position.z = bodyRadius * 1.5; bugGroup.add(headMesh); const eyeRadius = 0.05; const eyeGeometry = new THREE.SphereGeometry(eyeRadius, 8, 6); const eyeL = new THREE.Mesh(eyeGeometry, eyeMaterial); const eyeR = new THREE.Mesh(eyeGeometry, eyeMaterial); eyeL.position.set(-headRadius * 0.6, headRadius * 0.3, bodyRadius * 1.5 + headRadius * 0.7); eyeR.position.set(headRadius * 0.6, headRadius * 0.3, bodyRadius * 1.5 + headRadius * 0.7); bugGroup.add(eyeL); bugGroup.add(eyeR); const possibleSnippets = codeSnippets[currentSyntaxLevel]; const syntax = possibleSnippets[Math.floor(Math.random() * possibleSnippets.length)]; const bugPoints = 10 + syntax.length * 2; const speedMultiplier = (bodyColor === 0xaa3333) ? 1.3 : 1.0; const angle = Math.random() * Math.PI * 2; const radius = 10; bugGroup.position.set(Math.cos(angle) * radius, 0.3, Math.sin(angle) * radius); if (serverGroup) { bugGroup.lookAt(serverGroup.position); } const labelElement = document.createElement('div'); labelElement.textContent = syntax; labelElement.className = 'syntax-label'; syntaxOverlaysContainer.appendChild(labelElement); const bugData = { group: bugGroup, labelElement: labelElement, syntax: syntax, points: bugPoints, speedMultiplier: speedMultiplier }; scene.add(bugGroup); bugs.push(bugData); }
 
 
         // --- Game Logic ---
-        async function startGame() { console.log("startGame() called"); if (!audioReady) { console.log("Attempting to start Tone.js..."); try { await Tone.start(); console.log("Tone.js started successfully."); synth = new Tone.Synth().toDestination(); noiseSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0 } }).toDestination(); console.log("Synths initialized."); audioReady = true; } catch (e) { console.error("Audio context error:", e); audioReady = false; messageText.innerHTML = "Audio failed. No sound.<br>Type syntax + Enter!"; } } score = 0; serverHealth = 100; bugSpawnInterval = 2500; bugSpeed = 0.008; currentSyntaxLevel = 0; nextLevelScore = levelUpScore; gameActive = true; bugs.forEach(bug => removeBug(bug, -1, false)); bugs = []; terminalOutput.innerHTML = ''; addTerminalLine("System Booting...", "success-output"); updateScore(0); updateHealth(100); hideMessage(); syntaxInputElement.disabled = false; syntaxInputElement.focus(); if (animationFrameId) cancelAnimationFrame(animationFrameId); if (spawnTimeoutId) clearTimeout(spawnTimeoutId); animate(); spawnLoop(); console.log("Game loops started"); }
+        async function startGame() { if (!developerName) { handleNameSubmit(); if (!developerName) return; } console.log(`startGame() called for ${developerName}`); if (!audioReady) { console.log("Attempting to start Tone.js..."); try { await Tone.start(); console.log("Tone.js started successfully."); synth = new Tone.Synth().toDestination(); noiseSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0 } }).toDestination(); console.log("Synths initialized."); audioReady = true; } catch (e) { console.error("Audio context error:", e); audioReady = false; } } score = 0; serverHealth = 100; bugSpawnInterval = 2500; bugSpeed = 0.008; currentSyntaxLevel = 0; nextLevelScore = levelUpScore; gameActive = true; activeExplosions = []; bugs.forEach(bug => removeBug(bug, -1, false)); bugs = []; terminalOutput.innerHTML = ''; addTerminalLine(`User ${developerName} logged in. Initializing simulation...`, "success-output"); updateScore(0); updateHealth(100); hideMessage(); syntaxInputElement.disabled = false; syntaxInputElement.focus(); if (animationFrameId) cancelAnimationFrame(animationFrameId); if (spawnTimeoutId) clearTimeout(spawnTimeoutId); animate(); spawnLoop(); console.log("Game loops started"); }
         function spawnLoop() { if (!gameActive) return; createBug(); spawnTimeoutId = setTimeout(spawnLoop, bugSpawnInterval); }
         function project3DToScreen(vector3D, camera, container) { const vector = vector3D.clone().project(camera); const x = (vector.x * 0.5 + 0.5) * container.clientWidth; const y = (-vector.y * 0.5 + 0.5) * container.clientHeight; const behindCamera = vector.z > 1; return { x, y, behindCamera }; }
         function updateGame() { if (!gameActive || !scene) return; for (let i = bugs.length - 1; i >= 0; i--) { const bug = bugs[i]; if (!bug || !bug.group) continue; const direction = new THREE.Vector3(); if (serverGroup) { const targetPosition = serverGroup.position.clone(); targetPosition.y = bug.group.position.y; direction.subVectors(targetPosition, bug.group.position).normalize(); } else { continue; } const currentSpeed = bugSpeed * (bug.speedMultiplier || 1.0); bug.group.position.add(direction.multiplyScalar(currentSpeed)); if (bug.labelElement) { const screenPos = project3DToScreen(bug.group.position, camera, canvasArea); if (!screenPos.behindCamera && screenPos.x > -50 && screenPos.x < canvasArea.clientWidth + 50 && screenPos.y > -50 && screenPos.y < canvasArea.clientHeight + 50) { bug.labelElement.style.left = `${screenPos.x}px`; bug.labelElement.style.top = `${screenPos.y}px`; if (!bug.labelElement.classList.contains('visible')) { setTimeout(() => { if (bug.labelElement) bug.labelElement.classList.add('visible'); }, 10); } } else { bug.labelElement.classList.remove('visible'); bug.labelElement.style.left = '-9999px'; } } const distance = bug.group.position.distanceTo(serverGroup.position); if (distance < 1.5) { handleBugReachedServer(bug, i); } } if (serverHealth <= 0) { gameOver(); } if (score >= nextLevelScore) { levelUp(); nextLevelScore += levelUpScore + (currentSyntaxLevel * 150); } }
-        function removeBug(bug, index, performSplice = true) { if (!bug) return; if (bug.labelElement) { bug.labelElement.classList.remove('visible'); setTimeout(() => { if(bug.labelElement) bug.labelElement.remove(); }, 210); } if (bug.group && scene) { scene.remove(bug.group); } if (performSplice && index >= 0) { if(bugs[index] === bug) { bugs.splice(index, 1); } } }
+        function removeBug(bug, index, performSplice = true) { if (!bug || bug.isRemoving) return; bug.isRemoving = true; const position = bug.group ? bug.group.position.clone() : new THREE.Vector3(); let color = 0xffffff; if (bug.group && bug.group.children[0] && bug.group.children[0].material) { color = bug.group.children[0].material.color.getHex(); } createExplosion(position, color); if (bug.labelElement) { bug.labelElement.remove(); bug.labelElement = null; } if (bug.group && scene) { scene.remove(bug.group); } if (performSplice && index >= 0) { if(bugs[index] === bug) { bugs.splice(index, 1); } } }
         function handleBugReachedServer(bug, index) { if (audioReady && noiseSynth) { try { noiseSynth.triggerAttackRelease("0.1"); } catch (e) { console.error("Tone.js error:", e); } } updateHealth(serverHealth - 15); removeBug(bug, index); }
         function levelUp() { bugSpeed = Math.min(maxBugSpeed, bugSpeed + speedIncrease); bugSpawnInterval = Math.max(minSpawnInterval, bugSpawnInterval - spawnRateDecrease); currentSyntaxLevel = Math.min(maxSyntaxLevel, currentSyntaxLevel + 1); console.log("Level Up! Speed:", bugSpeed.toFixed(3), "Spawn:", bugSpawnInterval, "Syntax Lvl:", currentSyntaxLevel); }
-        function gameOver() { console.log("gameOver() called"); gameActive = false; syntaxInputElement.disabled = true; if (animationFrameId) cancelAnimationFrame(animationFrameId); if (spawnTimeoutId) clearTimeout(spawnTimeoutId); if (audioReady && noiseSynth) { try { noiseSynth.triggerAttackRelease("0.5"); } catch (e) { console.error("Tone.js error:", e); } } addTerminalLine("SERVER CRASH IMMINENT! GAME OVER.", "error-output"); showMessage("Game Over!", `Your Score: ${score}<br>Syntax Error Overload!`, "Restart Game", true); }
+        function gameOver() { console.log("gameOver() called"); gameActive = false; syntaxInputElement.disabled = true; if (animationFrameId) cancelAnimationFrame(animationFrameId); if (spawnTimeoutId) clearTimeout(spawnTimeoutId); if (audioReady && noiseSynth) { try { noiseSynth.triggerAttackRelease("0.5"); } catch (e) { console.error("Tone.js error:", e); } } addTerminalLine(`FATAL ERROR: Server crashed! User ${developerName} disconnected.`, "error-output"); showMessage("Game Over!", `Your Score: ${score}<br>Syntax Error Overload!`, "Restart Game", true); startButton.onclick = null; startButton.addEventListener('click', setupInitialOverlay, { once: true }); }
 
         // --- UI Updates ---
         function updateScore(newScore) { score = newScore; scoreElement.textContent = `Score: ${score}`; }
-        function updateHealth(newHealth) { serverHealth = Math.max(0, newHealth); healthElement.textContent = `Server Health: ${serverHealth}%`; }
-        function showMessage(title, text, buttonText, isGameOver) { console.log(`showMessage: ${title}`); messageTitle.textContent = title; messageText.innerHTML = text; startButton.textContent = buttonText; if (isGameOver) { messageTitle.classList.add('game-over'); } else { messageTitle.classList.remove('game-over'); } messageOverlay.classList.add('visible'); }
+        function updateHealth(newHealth) { serverHealth = Math.max(0, newHealth); healthElement.textContent = `Server Health: ${serverHealth}%`; if (healthBar) { healthBar.style.width = `${serverHealth}%`; if (serverHealth > 60) { healthBar.style.backgroundColor = '#00ff00'; } else if (serverHealth > 30) { healthBar.style.backgroundColor = '#ffff00'; } else { healthBar.style.backgroundColor = '#ff0000'; } } if (serverStatusLight && serverStatusLight.material) { if (serverHealth > 60) { serverStatusLight.material.color.setHex(0x00ff00); } else if (serverHealth > 30) { serverStatusLight.material.color.setHex(0xffff00); } else { serverStatusLight.material.color.setHex(0xff0000); } } }
+        function showMessage(title, text, buttonText, isGameOver) { console.log(`showMessage called for: ${title}`); if (isGameOver) { messageTitle.textContent = title; messageText.innerHTML = text; startButton.textContent = buttonText; messageTitle.classList.add('game-over'); messageOverlay.classList.add('visible'); } else if (!gameActive && !developerName) { messageOverlay.classList.add('visible'); } else if (!gameActive && developerName) { messageOverlay.classList.add('visible'); } }
         function hideMessage() { console.log("hideMessage called"); messageOverlay.classList.remove('visible'); }
 
         // --- Terminal Helper ---
@@ -263,46 +263,56 @@
 
         // --- Event Handlers ---
         function onWindowResize() { if (!camera || !renderer || !canvasArea) return; const width = canvasArea.clientWidth; const height = canvasArea.clientHeight; camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height); console.log("Window resized"); }
-
-        function onSyntaxInput(event) {
-            if (event.key !== 'Enter' || !gameActive) return;
-
-            const typedSyntax = syntaxInputElement.value.trim();
-            if (typedSyntax === '') return;
-
-            addTerminalLine(`> ${typedSyntax}`, 'command-history');
-
-            let bugSquashed = false;
-            let pointsAwarded = 0;
-            for (let i = bugs.length - 1; i >= 0; i--) {
-                const bug = bugs[i];
-                if (bug && bug.syntax === typedSyntax) {
-                    if (audioReady && synth) { try { synth.triggerAttackRelease("C5", "8n"); } catch (e) { console.error("Tone.js error:", e); } }
-                    pointsAwarded = bug.points;
-                    updateScore(score + pointsAwarded);
-                    removeBug(bug, i);
-                    bugSquashed = true;
-                    break;
-                }
-            }
-
-            if (bugSquashed) {
-                const randomIndex = Math.floor(Math.random() * successMessages.length);
-                const messageTemplate = successMessages[randomIndex];
-                const formattedMessage = messageTemplate.replace('{points}', pointsAwarded);
-                addTerminalLine(formattedMessage, 'success-output');
-                syntaxInputElement.value = ''; // Clear input on success
-            } else {
-                 addTerminalLine(`SyntaxError: Unrecognized command "${typedSyntax}"`, 'error-output');
-                 if (audioReady && noiseSynth) { try { noiseSynth.triggerAttackRelease("0.05"); } catch (e) { console.error("Tone.js error:", e); } }
-                 syntaxInputElement.value = ''; // *** ADDED: Clear input on error too ***
-            }
-        }
-
+        function onSyntaxInput(event) { if (event.key !== 'Enter' || !gameActive) return; const typedSyntax = syntaxInputElement.value.trim(); if (typedSyntax === '') return; addTerminalLine(`> ${typedSyntax}`, 'command-history'); let bugSquashed = false; let pointsAwarded = 0; for (let i = bugs.length - 1; i >= 0; i--) { const bug = bugs[i]; if (bug && !bug.isRemoving && bug.syntax === typedSyntax) { if (audioReady && synth) { try { synth.triggerAttackRelease("C5", "8n"); } catch (e) { console.error("Tone.js error:", e); } } pointsAwarded = bug.points; updateScore(score + pointsAwarded); removeBug(bug, i); bugSquashed = true; break; } } if (bugSquashed) { const randomIndex = Math.floor(Math.random() * successMessages.length); const messageTemplate = successMessages[randomIndex]; const formattedMessage = messageTemplate.replace('{points}', pointsAwarded); addTerminalLine(formattedMessage, 'success-output'); syntaxInputElement.value = ''; } else { addTerminalLine(`SyntaxError: Unrecognized command "${typedSyntax}"`, 'error-output'); if (audioReady && noiseSynth) { try { noiseSynth.triggerAttackRelease("0.05"); } catch (e) { console.error("Tone.js error:", e); } } syntaxInputElement.value = ''; } }
         function focusInput() { if(!messageOverlay.classList.contains('visible')) { syntaxInputElement.focus(); } }
 
+        // --- Explosion Creation Function ---
+        function createExplosion(position, color = 0xffffff) { const numParticles = 8; const explosionSpeed = 3; const particleSize = 0.05; const explosionDuration = 0.6; const particles = []; const geometry = new THREE.SphereGeometry(particleSize, 6, 6); for (let i = 0; i < numParticles; i++) { const material = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.8 }); const mesh = new THREE.Mesh(geometry, material); const direction = new THREE.Vector3( Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5 ).normalize(); mesh.position.copy(position); scene.add(mesh); particles.push({ mesh: mesh, direction: direction, speed: explosionSpeed * (0.7 + Math.random() * 0.6), life: explosionDuration }); } activeExplosions.push(particles); }
+
+        // --- Update Explosion Animations ---
+        function updateExplosions(deltaTime) { for (let i = activeExplosions.length - 1; i >= 0; i--) { const particles = activeExplosions[i]; let particlesRemaining = false; for (let j = particles.length - 1; j >= 0; j--) { const p = particles[j]; p.life -= deltaTime; if (p.life <= 0) { scene.remove(p.mesh); particles.splice(j, 1); } else { p.mesh.position.add(p.direction.clone().multiplyScalar(p.speed * deltaTime)); p.mesh.material.opacity = Math.max(0, (p.life / 0.6) * 0.8); particlesRemaining = true; } } if (!particlesRemaining) { activeExplosions.splice(i, 1); } } }
+
+        // *** NEW: Update Environment Animations ***
+        function updateEnvironmentAnimations(elapsedTime) {
+            // Animate Server Indicator Lights
+            serverIndicatorLights.forEach((lightInfo, index) => {
+                // Pulse brightness using sine wave (alpha between 0 and 1)
+                const alpha = (Math.sin(elapsedTime * 4 + index * 1.5) + 1) / 2; // Adjust frequency and offset
+                // Lerp color between base color and white for brightness pulse
+                lightInfo.mesh.material.color.lerpColors(lightInfo.baseColor, 0xffffff, alpha * 0.3); // pulse 30% towards white
+            });
+
+            // Animate PCB Traces
+            pcbPulsingTraces.forEach((traceMesh, index) => {
+                const alpha = (Math.sin(elapsedTime * 2.5 + index * 0.8) + 1) / 2;
+                traceMesh.material.color.lerpColors(traceBaseColor, tracePulseColor, alpha * 0.6); // Pulse 60% towards brighter color
+            });
+
+             // Animate PCB Pads
+             pcbPads.forEach((padMesh, index) => {
+                const alpha = (Math.sin(elapsedTime * 1.5 + index * 0.5) + 1) / 2;
+                padMesh.material.color.lerpColors(padBaseColor, padPulseColor, alpha * 0.4); // Pulse 40% towards white
+            });
+        }
+
+
         // --- Animation Loop ---
-        function animate() { animationFrameId = requestAnimationFrame(animate); if (gameActive && renderer && scene && camera) { updateGame(); renderer.render(scene, camera); } else if (!gameActive && renderer && scene && camera) { renderer.render(scene, camera); } }
+        function animate() {
+             animationFrameId = requestAnimationFrame(animate);
+             const deltaTime = clock.getDelta();
+             const elapsedTime = clock.getElapsedTime(); // Get total elapsed time
+
+             if (gameActive && scene && camera) {
+                 updateGame();
+             }
+
+             updateExplosions(deltaTime);
+             updateEnvironmentAnimations(elapsedTime); // *** Call new animation function ***
+
+             if (renderer && scene && camera) {
+                 renderer.render(scene, camera);
+             }
+        }
 
         // --- Start the application ---
         function main() { console.log("main() called"); initVisuals(); animate(); }
@@ -312,4 +322,3 @@
     </script>
 </body>
 </html>
-

@@ -134,6 +134,7 @@
         let hurryAudios = [];
         let hurryTimeoutId = null;
         let backgroundMusic = null;
+        let gameOverSound = null; // *** Variable for game over sound ***
 
 
         // DOM Elements
@@ -169,6 +170,23 @@
         // --- Preload Audio Files ---
         function preloadHurryAudio() { console.log("Preloading hurry audio..."); hurryAudios = []; for (let i = 1; i <= numHurryAudios; i++) { try { const audio = new Audio(); audio.src = `${hurryAudioBaseUrl}${i}.mp3`; audio.preload = 'auto'; audio.addEventListener('canplaythrough', () => console.log(`Audio ${i}.mp3 can play through.`)); audio.addEventListener('error', (e) => console.error(`Error loading audio ${i}.mp3:`, e)); hurryAudios.push(audio); } catch (error) { console.error(`Failed to create or load audio ${i}.mp3:`, error); } } }
         function preloadBackgroundMusic() { console.log("Preloading background music..."); try { backgroundMusic = new Audio(); backgroundMusic.src = `${hurryAudioBaseUrl}music.mp3`; backgroundMusic.preload = 'auto'; backgroundMusic.loop = true; backgroundMusic.volume = 0.7; backgroundMusic.addEventListener('canplaythrough', () => console.log(`Background music can play through.`)); backgroundMusic.addEventListener('error', (e) => console.error(`Error loading background music:`, e)); } catch (error) { console.error("Failed to create or load background music:", error); backgroundMusic = null; } }
+        // *** NEW: Preload Game Over Sound ***
+        function preloadGameOverSound() {
+             console.log("Preloading game over sound...");
+             try {
+                 gameOverSound = new Audio();
+                 gameOverSound.src = `${hurryAudioBaseUrl}lost.mp3`; // Assuming same base URL
+                 gameOverSound.preload = 'auto';
+                 gameOverSound.loop = false; // Don't loop game over sound
+                 // gameOverSound.volume = 1.0; // Default volume or set as needed
+                 gameOverSound.addEventListener('canplaythrough', () => console.log(`Game over sound can play through.`));
+                 gameOverSound.addEventListener('error', (e) => console.error(`Error loading game over sound:`, e));
+             } catch (error) {
+                 console.error("Failed to create or load game over sound:", error);
+                 gameOverSound = null;
+             }
+        }
+
 
         // --- Initialization (Visuals Only) ---
         function initVisuals() {
@@ -193,7 +211,34 @@
         function removeBug(bug, index, performSplice = true) { if (!bug || bug.isRemoving) return; bug.isRemoving = true; const position = bug.group ? bug.group.position.clone() : new THREE.Vector3(); let color = 0xffffff; if (bug.group && bug.group.children[0] && bug.group.children[0].material) { color = bug.group.children[0].material.color.getHex(); } createExplosion(position, color); if (bug.labelElement) { bug.labelElement.remove(); bug.labelElement = null; } if (bug.group && scene) { scene.remove(bug.group); } if (performSplice && index >= 0) { if(bugs[index] === bug) { bugs.splice(index, 1); } } }
         function handleBugReachedServer(bug, index) { if (audioReady && noiseSynth) { try { noiseSynth.triggerAttackRelease("0.1"); } catch (e) { console.error("Tone.js error:", e); } } updateHealth(serverHealth - 15); removeBug(bug, index); }
         function levelUp() { bugSpeed = Math.min(maxBugSpeed, bugSpeed + speedIncrease); bugSpawnInterval = Math.max(minSpawnInterval, bugSpawnInterval - spawnRateDecrease); currentSyntaxLevel = Math.min(maxSyntaxLevel, currentSyntaxLevel + 1); console.log("Level Up! Speed:", bugSpeed.toFixed(3), "Spawn:", bugSpawnInterval, "Syntax Lvl:", currentSyntaxLevel); }
-        async function gameOver() { console.log("gameOver() called"); gameActive = false; syntaxInputElement.disabled = true; if (animationFrameId) cancelAnimationFrame(animationFrameId); if (spawnTimeoutId) clearTimeout(spawnTimeoutId); if (hurryTimeoutId) clearTimeout(hurryTimeoutId); if (backgroundMusic) { backgroundMusic.pause(); backgroundMusic.currentTime = 0; } if (audioReady && noiseSynth) { try { noiseSynth.triggerAttackRelease("0.5"); } catch (e) { console.error("Tone.js error:", e); } } if (developerName && score > 0) { await submitScore(developerName, score); await fetchHighScores(); } addTerminalLine(`FATAL ERROR: Server crashed! User ${developerName} disconnected. Score: ${score}`, "error-output"); showMessage("Game Over!", `Your Score: ${score}<br>Syntax Error Overload!`, "Restart Game", true); startButton.onclick = null; startButton.addEventListener('click', setupInitialOverlay, { once: true }); }
+
+        // *** MODIFIED gameOver to play sound ***
+        async function gameOver() {
+            console.log("gameOver() called"); gameActive = false; syntaxInputElement.disabled = true;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (spawnTimeoutId) clearTimeout(spawnTimeoutId);
+            if (hurryTimeoutId) clearTimeout(hurryTimeoutId);
+            if (backgroundMusic) { backgroundMusic.pause(); backgroundMusic.currentTime = 0; }
+
+            // *** Play Game Over Sound ***
+            if (gameOverSound) {
+                gameOverSound.currentTime = 0;
+                gameOverSound.play().catch(error => console.warn("Game over sound play failed:", error));
+            } else if (audioReady && noiseSynth) { // Fallback synth if MP3 failed
+                try { noiseSynth.triggerAttackRelease("0.5"); } catch (e) { console.error("Tone.js error:", e); }
+            }
+
+            // Submit score (asynchronously)
+            if (developerName && score > 0) {
+                 submitScore(developerName, score).then(() => {
+                     fetchHighScores(); // Refresh scoreboard after submitting
+                 });
+            }
+
+            addTerminalLine(`FATAL ERROR: Server crashed! User ${developerName} disconnected. Score: ${score}`, "error-output");
+            showMessage("Game Over!", `Your Score: ${score}<br>Syntax Error Overload!`, "Restart Game", true);
+            startButton.onclick = null; startButton.addEventListener('click', setupInitialOverlay, { once: true });
+        }
 
         // --- UI Updates ---
         function updateScore(newScore) { score = newScore; scoreElement.textContent = `Score: ${score}`; }
@@ -223,116 +268,10 @@
         function scheduleHurrySound() { if (hurryTimeoutId) clearTimeout(hurryTimeoutId); if (!gameActive) return; const delay = 8000 + Math.random() * 7000; console.log(`Scheduling next hurry sound in ${delay / 1000} seconds.`); hurryTimeoutId = setTimeout(() => { playHurrySound(); scheduleHurrySound(); }, delay); }
 
         // --- Supabase Functions ---
-        function initializeSupabase() {
-            console.log("Checking window.supabase in initializeSupabase:", window.supabase); // Added log
-            if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
-                console.log('Supabase global object and createClient found. Initializing client...');
-                try {
-                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); // Use window.supabase
-                     console.log("Supabase client created:", supabaseClient);
-                     return true;
-                } catch (error) {
-                     console.error("Error initializing Supabase client:", error);
-                     supabaseClient = null;
-                     return false;
-                }
-            } else {
-                 console.error("Supabase library not loaded or createClient function not found on global object.");
-                 supabaseClient = null;
-                 return false;
-            }
-        }
-        async function fetchHighScores() {
-            if (!supabaseClient) {
-                 console.error("Supabase client not initialized. Cannot fetch scores.");
-                 scoreboardMessage.textContent = "Error connecting to scoreboard.";
-                 scoreboardMessage.style.display = 'block';
-                 return;
-            }
-            console.log("Fetching high scores...");
-            scoreboardMessage.textContent = "Loading...";
-            scoreboardMessage.style.display = 'block';
-            scoreboardList.innerHTML = '';
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('scoreboard') .select('player, score')
-                    .order('score', { ascending: false }).limit(10);
-
-                if (error) { throw error; }
-
-                if (data) {
-                    console.log("Scores fetched:", data);
-                    displayScores(data);
-                    scoreboardMessage.style.display = 'none';
-                } else {
-                     scoreboardMessage.textContent = "No scores yet!";
-                     scoreboardMessage.style.display = 'block';
-                }
-            } catch (error) {
-                 console.error("Error fetching scores:", error);
-                 scoreboardMessage.textContent = `Error: ${error.message}`;
-                 scoreboardMessage.style.display = 'block';
-            }
-        }
-        function displayScores(scores) {
-            scoreboardList.innerHTML = '';
-            if (!scores || scores.length === 0) {
-                scoreboardMessage.textContent = "No scores yet!";
-                scoreboardMessage.style.display = 'block';
-                return;
-            }
-            scores.forEach(scoreData => { const li = document.createElement('li'); const nameSpan = document.createElement('span'); const scoreSpan = document.createElement('span'); nameSpan.textContent = scoreData.player; scoreSpan.textContent = scoreData.score; li.appendChild(nameSpan); li.appendChild(scoreSpan); scoreboardList.appendChild(li); });
-             scoreboardMessage.style.display = 'none';
-        }
-        async function submitScore(playerName, finalScore) {
-             if (!supabaseClient) { console.error("Supabase client not initialized. Cannot submit score."); return; }
-             if (!playerName || typeof finalScore !== 'number' || finalScore <= 0) { console.log("Invalid name or score, not submitting."); return; }
-             console.log(`Submitting score for ${playerName}: ${finalScore}`);
-             addTerminalLine(`Submitting score ${finalScore}...`, 'command-history');
-
-             try {
-                 // 1. Check for existing score
-                 const { data: existingData, error: selectError } = await supabaseClient
-                    .from('scoreboard')
-                    .select('score')
-                    .eq('player', playerName)
-                    .limit(1);
-
-                 if (selectError) throw selectError;
-
-                 if (existingData && existingData.length > 0) {
-                     // Player exists
-                     const existingScore = existingData[0].score;
-                     if (finalScore > existingScore) {
-                         // New score is higher, update
-                         console.log(`Updating score for ${playerName} from ${existingScore} to ${finalScore}`);
-                         const { error: updateError } = await supabaseClient
-                            .from('scoreboard')
-                            .update({ score: finalScore })
-                            .eq('player', playerName);
-                         if (updateError) throw updateError;
-                         addTerminalLine(`High score updated to ${finalScore}!`, 'success-output');
-                     } else {
-                         // Score is not higher
-                         console.log(`Score ${finalScore} is not higher than existing ${existingScore} for ${playerName}. Not updating.`);
-                         addTerminalLine(`Score ${finalScore} not higher than your best.`, 'command-history'); // Info message
-                     }
-                 } else {
-                     // Player does not exist, insert new score
-                     console.log(`Inserting new score for ${playerName}: ${finalScore}`);
-                     const { error: insertError } = await supabaseClient
-                        .from('scoreboard')
-                        .insert([{ player: playerName, score: finalScore }]);
-                     if (insertError) throw insertError;
-                     addTerminalLine("Score submitted!", 'success-output');
-                 }
-
-             } catch (error) {
-                 console.error("Error submitting/updating score:", error);
-                 addTerminalLine(`Error submitting score: ${error.message}`, 'error-output');
-             }
-        }
+        function initializeSupabase() { console.log("Checking window.supabase in initializeSupabase:", window.supabase); if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') { console.log('Supabase global object and createClient found. Initializing client...'); try { supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); console.log("Supabase client created:", supabaseClient); return true; } catch (error) { console.error("Error initializing Supabase client:", error); supabaseClient = null; return false; } } else { console.error("Supabase library not loaded or createClient function not found on global object."); supabaseClient = null; return false; } }
+        async function fetchHighScores() { if (!supabaseClient) { console.error("Supabase client not initialized. Cannot fetch scores."); scoreboardMessage.textContent = "Error connecting to scoreboard."; scoreboardMessage.style.display = 'block'; return; } console.log("Fetching high scores..."); scoreboardMessage.textContent = "Loading..."; scoreboardMessage.style.display = 'block'; scoreboardList.innerHTML = ''; try { const { data, error } = await supabaseClient .from('scoreboard') .select('player, score') .order('score', { ascending: false }).limit(10); if (error) { throw error; } if (data) { console.log("Scores fetched:", data); displayScores(data); scoreboardMessage.style.display = 'none'; } else { scoreboardMessage.textContent = "No scores yet!"; scoreboardMessage.style.display = 'block'; } } catch (error) { console.error("Error fetching scores:", error); scoreboardMessage.textContent = `Error: ${error.message}`; scoreboardMessage.style.display = 'block'; } }
+        function displayScores(scores) { scoreboardList.innerHTML = ''; if (!scores || scores.length === 0) { scoreboardMessage.textContent = "No scores yet!"; scoreboardMessage.style.display = 'block'; return; } scores.forEach(scoreData => { const li = document.createElement('li'); const nameSpan = document.createElement('span'); const scoreSpan = document.createElement('span'); nameSpan.textContent = scoreData.player; scoreSpan.textContent = scoreData.score; li.appendChild(nameSpan); li.appendChild(scoreSpan); scoreboardList.appendChild(li); }); scoreboardMessage.style.display = 'none'; }
+        async function submitScore(playerName, finalScore) { if (!supabaseClient) { console.error("Supabase client not initialized. Cannot submit score."); return; } if (!playerName || typeof finalScore !== 'number' || finalScore <= 0) { console.log("Invalid name or score, not submitting."); return; } console.log(`Submitting score for ${playerName}: ${finalScore}`); addTerminalLine(`Submitting score ${finalScore}...`, 'command-history'); try { const { data: existingData, error: selectError } = await supabaseClient .from('scoreboard') .select('score') .eq('player', playerName) .limit(1); if (selectError) throw selectError; if (existingData && existingData.length > 0) { const existingScore = existingData[0].score; if (finalScore > existingScore) { console.log(`Updating score for ${playerName} from ${existingScore} to ${finalScore}`); const { error: updateError } = await supabaseClient .from('scoreboard') .update({ score: finalScore }) .eq('player', playerName); if (updateError) throw updateError; addTerminalLine(`High score updated to ${finalScore}!`, 'success-output'); } else { console.log(`Score ${finalScore} is not higher than existing ${existingScore} for ${playerName}. Not updating.`); addTerminalLine(`Score ${finalScore} not higher than your best.`, 'command-history'); } } else { console.log(`Inserting new score for ${playerName}: ${finalScore}`); const { error: insertError } = await supabaseClient .from('scoreboard') .insert([{ player: playerName, score: finalScore }]); if (insertError) throw insertError; addTerminalLine("Score submitted!", 'success-output'); } } catch (error) { console.error("Error submitting/updating score:", error); addTerminalLine(`Error submitting score: ${error.message}`, 'error-output'); } }
 
 
         // --- Animation Loop ---
@@ -341,14 +280,11 @@
         // --- Start the application ---
         function main() {
             console.log("main() called");
-            if (initializeSupabase()) {
-                 fetchHighScores();
-            } else {
-                 scoreboardMessage.textContent = "Scoreboard unavailable.";
-                 scoreboardMessage.style.display = 'block';
-            }
+            if (initializeSupabase()) { fetchHighScores(); }
+            else { scoreboardMessage.textContent = "Scoreboard unavailable."; scoreboardMessage.style.display = 'block'; }
             preloadHurryAudio();
             preloadBackgroundMusic();
+            preloadGameOverSound(); // *** Call preload for game over sound ***
             initVisuals();
             animate();
         }
